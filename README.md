@@ -21,15 +21,15 @@ It pulls real LinkedIn jobs, ranks relevance against your resume, applies includ
 
 ### Dashboard Overview
 
-![JobPulse Dashboard](docs/screenshots/dashboard-overview.svg)
+![JobPulse Dashboard](docs/screenshots/dashboard-overview.png)
 
 ### Settings and Filters
 
-![JobPulse Settings and Filters](docs/screenshots/settings-and-filters.svg)
+![JobPulse Settings and Filters](docs/screenshots/settings-and-filters.png)
 
 ### Resume PDF Parsing
 
-![JobPulse Resume PDF Parsing](docs/screenshots/resume-pdf-parse.svg)
+![JobPulse Resume PDF Parsing](docs/screenshots/resume-pdf-parse.png)
 
 ## Quick Start (Source)
 
