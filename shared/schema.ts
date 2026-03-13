@@ -78,6 +78,7 @@ export interface Settings {
   scheduleEnabled: boolean;
   maxJobs: number;
   experienceFilter: string;
+  jobType: string;
   includeKeywords: string;
   excludeKeywords: string;
   recencyDays: number;
@@ -94,6 +95,7 @@ export const updateSettingsSchema = z.object({
   scheduleEnabled: z.boolean().optional(),
   maxJobs: z.number().min(1).max(50).optional(),
   experienceFilter: z.string().optional(),
+  jobType: z.string().optional(),
   includeKeywords: z.string().optional(),
   excludeKeywords: z.string().optional(),
   recencyDays: z.number().min(1).max(30).optional(),
