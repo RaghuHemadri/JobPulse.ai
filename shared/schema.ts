@@ -72,11 +72,15 @@ export interface Job {
 }
 
 // ---- Settings ----
+export const JOB_TYPE_VALUES = ["ai_ml", "sde_swe", "devops", "hardware"] as const;
+export type JobType = (typeof JOB_TYPE_VALUES)[number];
+
 export interface Settings {
   scheduleHour: number;
   scheduleMinute: number;
   scheduleEnabled: boolean;
   maxJobs: number;
+  jobType: JobType;
   experienceFilter: string;
   includeKeywords: string;
   excludeKeywords: string;
@@ -93,6 +97,7 @@ export const updateSettingsSchema = z.object({
   scheduleMinute: z.number().min(0).max(59).optional(),
   scheduleEnabled: z.boolean().optional(),
   maxJobs: z.number().min(1).max(50).optional(),
+  jobType: z.enum(JOB_TYPE_VALUES).optional(),
   experienceFilter: z.string().optional(),
   includeKeywords: z.string().optional(),
   excludeKeywords: z.string().optional(),

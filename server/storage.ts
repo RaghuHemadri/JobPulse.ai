@@ -69,6 +69,7 @@ export class MemStorage implements IStorage {
       scheduleMinute: 0,
       scheduleEnabled: false,
       maxJobs: 20,
+      jobType: "ai_ml",
       experienceFilter: "MS degree, ≤3 years experience",
       includeKeywords: "",
       excludeKeywords: "",

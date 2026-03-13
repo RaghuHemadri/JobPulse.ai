@@ -1,19 +1,91 @@
 import { storage } from "./storage";
 import type { Job } from "@shared/schema";
+import type { JobType } from "@shared/schema";
 import { getLlmKeyMissingMessage, resolveLlmSettings } from "./llm";
 import { generateWithGemini } from "./gemini";
 
 // Match keywords for scoring
-const MATCH_KEYWORDS = [
+const AI_ML_MATCH_KEYWORDS = [
   "llm", "large language model", "nlp", "natural language processing",
   "rag", "retrieval augmented", "pytorch", "tensorflow",
   "fine-tuning", "fine tuning", "lora", "rlhf", "grpo", "sft",
   "reinforcement learning", "mlops", "kubernetes", "ray",
   "multimodal", "transformer", "deep learning", "agentic",
   "knowledge graph", "gcp", "azure", "fastapi",
+  "computer vision", "recommendation systems", "feature engineering",
+  "model serving", "ml platform", "airflow", "spark", "scikit-learn",
+  "vector database", "prompt engineering", "inference", "onnx", "cuda",
   "machine learning engineer", "ai engineer", "research scientist",
   "applied scientist", "ml engineer", "nlp engineer",
 ];
+
+type JobTypeConfig = {
+  label: string;
+  searchTerms: string[];
+  matchKeywords: string[];
+  roleSignals: string[];
+  defaultReason: string;
+};
+
+const JOB_TYPE_CONFIG: Record<JobType, JobTypeConfig> = {
+  ai_ml: {
+    label: "ML",
+    searchTerms: ["machine learning engineer", "applied scientist", "llm engineer", "generative ai"],
+    matchKeywords: AI_ML_MATCH_KEYWORDS,
+    roleSignals: [
+      "machine learning", "ml engineer", "ai engineer", "nlp", "data scientist",
+      "applied scientist", "research scientist", "deep learning", "llm", "generative ai",
+      "computer vision", "recommendation", "ml platform", "inference",
+    ],
+    defaultReason: "ML/AI skills alignment",
+  },
+  sde_swe: {
+    label: "SWE",
+    searchTerms: ["software engineer", "backend engineer", "full stack engineer", "software development engineer"],
+    matchKeywords: [
+      "software engineer", "sde", "swe", "backend", "full stack", "frontend", "typescript", "javascript",
+      "java", "python", "golang", "c++", "system design", "distributed systems", "microservices", "api",
+      "node", "react", "sql", "database", "rest", "graphql", "grpc", "kafka", "redis",
+      "postgres", "mysql", "mongodb", "aws", "cloud", "testing", "tdd", "algorithms",
+    ],
+    roleSignals: [
+      "software engineer", "sde", "swe", "backend", "frontend", "full stack", "developer",
+      "backend engineer", "full stack engineer", "frontend engineer", "software developer",
+      "application engineer", "mobile engineer", "ios", "android",
+    ],
+    defaultReason: "Software engineering fit",
+  },
+  devops: {
+    label: "DevOps",
+    searchTerms: ["devops engineer", "site reliability engineer", "platform engineer", "cloud engineer"],
+    matchKeywords: [
+      "devops", "sre", "site reliability", "platform engineer", "kubernetes", "docker", "terraform", "ansible",
+      "ci/cd", "jenkins", "github actions", "aws", "gcp", "azure", "observability", "prometheus", "grafana",
+      "infrastructure", "linux", "incident", "helm", "gitops", "argo cd", "eks", "ecs",
+      "cloudformation", "pulumi", "vault", "datadog", "splunk", "on-call", "availability", "latency",
+    ],
+    roleSignals: [
+      "devops", "site reliability", "sre", "platform engineer", "infrastructure",
+      "cloud engineer", "release engineer", "reliability engineer", "operations engineer",
+    ],
+    defaultReason: "DevOps/SRE skills alignment",
+  },
+  hardware: {
+    label: "Hardware",
+    searchTerms: ["hardware engineer", "silicon engineer", "verification engineer", "embedded engineer", "firmware engineer"],
+    matchKeywords: [
+      "hardware", "silicon", "asic", "fpga", "rtl", "verilog", "systemverilog", "vlsi", "design verification",
+      "physical design", "timing", "synthesis", "chip", "embedded", "firmware", "pcb", "signal integrity",
+      "validation", "post-silicon", "soc", "uvm", "dft", "upf", "jtag", "spi", "i2c", "pcie",
+      "serdes", "board bring-up", "bring-up", "lab validation",
+    ],
+    roleSignals: [
+      "hardware", "silicon", "rtl", "verification", "asic", "fpga", "embedded",
+      "firmware", "design verification engineer", "physical design engineer", "post-silicon",
+    ],
+    defaultReason: "Hardware engineering fit",
+  },
+};
 
 const SENIOR_KEYWORDS = [
   "senior", "staff", "principal", "lead", "director", "head of",
@@ -25,9 +97,16 @@ function isSeniorRole(title: string, description: string): boolean {
   return SENIOR_KEYWORDS.some(kw => text.includes(kw));
 }
 
-function computeMatchScore(title: string, company: string, description: string, location: string, profileSkills: string[]): number {
+function computeMatchScore(
+  title: string,
+  company: string,
+  description: string,
+  location: string,
+  profileSkills: string[],
+  matchKeywords: string[],
+): number {
   const text = `${title} ${company} ${description}`.toLowerCase();
-  let score = MATCH_KEYWORDS.filter(kw => text.includes(kw)).length;
+  let score = matchKeywords.filter((kw) => text.includes(kw)).length;
   
   // Bonus for profile skill matches
   score += profileSkills.filter(skill => text.includes(skill.toLowerCase())).length;
@@ -40,8 +119,29 @@ function computeMatchScore(title: string, company: string, description: string, 
   return score;
 }
 
-function generateMatchReason(title: string, description: string): string {
+function generateMatchReason(title: string, description: string, jobType: JobType): string {
   const text = `${title} ${description}`.toLowerCase();
+  const config = JOB_TYPE_CONFIG[jobType] || JOB_TYPE_CONFIG.ai_ml;
+
+  if (jobType === "sde_swe") {
+    if (["distributed", "microservices", "system design"].some((kw) => text.includes(kw))) return "Distributed systems fit";
+    if (["backend", "api", "services"].some((kw) => text.includes(kw))) return "Backend engineering match";
+    if (["react", "frontend", "full stack"].some((kw) => text.includes(kw))) return "Full-stack fit";
+    return config.defaultReason;
+  }
+  if (jobType === "devops") {
+    if (["kubernetes", "docker", "container"].some((kw) => text.includes(kw))) return "Container platform match";
+    if (["terraform", "infrastructure", "iac"].some((kw) => text.includes(kw))) return "Infrastructure automation fit";
+    if (["sre", "reliability", "incident"].some((kw) => text.includes(kw))) return "SRE reliability alignment";
+    return config.defaultReason;
+  }
+  if (jobType === "hardware") {
+    if (["rtl", "verilog", "systemverilog"].some((kw) => text.includes(kw))) return "RTL design/verification fit";
+    if (["asic", "fpga", "silicon"].some((kw) => text.includes(kw))) return "Silicon engineering match";
+    if (["embedded", "firmware", "validation"].some((kw) => text.includes(kw))) return "Embedded/hardware validation fit";
+    return config.defaultReason;
+  }
+
   const reasons: string[] = [];
   if (["llm", "large language model", "fine-tuning", "fine tuning"].some(kw => text.includes(kw))) reasons.push("LLM/fine-tuning");
   if (["rag", "retrieval"].some(kw => text.includes(kw))) reasons.push("RAG");
@@ -51,7 +151,7 @@ function generateMatchReason(title: string, description: string): string {
   if (["multimodal", "vision"].some(kw => text.includes(kw))) reasons.push("Multimodal ML");
   if (["agentic", "agent"].some(kw => text.includes(kw))) reasons.push("Agentic AI");
   if (["pytorch", "tensorflow"].some(kw => text.includes(kw))) reasons.push("Framework match");
-  if (reasons.length === 0) reasons.push("ML/AI skills alignment");
+  if (reasons.length === 0) reasons.push(config.defaultReason);
   return reasons.slice(0, 3).join(", ");
 }
 
@@ -129,20 +229,9 @@ function locationMatchesTarget(jobLocation: string, targets: string[]): boolean 
   });
 }
 
-function titleLooksRelevant(title: string, description: string): boolean {
+function titleLooksRelevant(title: string, description: string, jobType: JobType): boolean {
   const text = `${title} ${description}`.toLowerCase();
-  const roleSignals = [
-    "machine learning",
-    "ml engineer",
-    "ai engineer",
-    "nlp",
-    "data scientist",
-    "applied scientist",
-    "research scientist",
-    "deep learning",
-    "llm",
-    "generative ai",
-  ];
+  const roleSignals = (JOB_TYPE_CONFIG[jobType] || JOB_TYPE_CONFIG.ai_ml).roleSignals;
   return roleSignals.some((s) => text.includes(s));
 }
 
@@ -277,9 +366,34 @@ function parseRelativePostedAgeDays(text: string): number | undefined {
   return undefined;
 }
 
-function buildLinkedInKeywords(resumes: { skills: string[]; rawText: string }[]): string {
-  void resumes;
-  return "machine learning ai";
+function normalizeKeyword(value: string): string {
+  return (value || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function extractResumeKeywords(resumes: { skills: string[]; rawText: string }[]): string[] {
+  const keywords = new Set<string>();
+  for (const resume of resumes) {
+    for (const skill of resume.skills || []) {
+      const kw = normalizeKeyword(skill);
+      if (kw.length >= 2 && kw.length <= 40) keywords.add(kw);
+    }
+  }
+  return Array.from(keywords);
+}
+
+function buildLinkedInKeywords(
+  resumes: { skills: string[]; rawText: string }[],
+  jobType: JobType,
+  includeKeywords: string[],
+): string {
+  const config = JOB_TYPE_CONFIG[jobType] || JOB_TYPE_CONFIG.ai_ml;
+  const resumeKeywords = extractResumeKeywords(resumes);
+  const terms = Array.from(new Set([
+    ...config.searchTerms.map(normalizeKeyword),
+    ...includeKeywords.map(normalizeKeyword),
+    ...resumeKeywords,
+  ])).filter(Boolean);
+  return terms.slice(0, 16).join(" ");
 }
 
 async function fetchLinkedInSearchJobs(keywords: string, location: string, start: number): Promise<RawJob[]> {
@@ -304,8 +418,15 @@ function dedupeJobs(jobs: RawJob[]): RawJob[] {
   return out;
 }
 
-async function collectJobsFromLinkedIn(resumes: { skills: string[]; rawText: string }[], locations: string[], recencyDays: number, desiredCount: number): Promise<RawJob[]> {
-  const keywords = buildLinkedInKeywords(resumes);
+async function collectJobsFromLinkedIn(
+  resumes: { skills: string[]; rawText: string }[],
+  locations: string[],
+  recencyDays: number,
+  desiredCount: number,
+  jobType: JobType,
+  includeKeywords: string[],
+): Promise<RawJob[]> {
+  const keywords = buildLinkedInKeywords(resumes, jobType, includeKeywords);
   const targets = Array.from(new Set([...(locations || []), "United States", "Remote"]));
   const jobs: RawJob[] = [];
   for (const target of targets) {
@@ -330,8 +451,11 @@ async function collectJobsFromLinkedIn(resumes: { skills: string[]; rawText: str
     ? strictRecent
     : relaxedRecent;
 
-  const prioritized = filtered.filter((j) => locationTier(j.location) === 0);
-  const usFallback = filtered.filter((j) => locationTier(j.location) === 1);
+  const roleRelevant = filtered.filter((j) => titleLooksRelevant(j.title, j.description, jobType));
+  const candidatePool = roleRelevant.length >= Math.max(20, desiredCount / 2) ? roleRelevant : filtered;
+
+  const prioritized = candidatePool.filter((j) => locationTier(j.location) === 0);
+  const usFallback = candidatePool.filter((j) => locationTier(j.location) === 1);
   return [...prioritized, ...usFallback];
 }
 
@@ -435,6 +559,7 @@ async function rankJobsWithLLM(
   resumes: { skills: string[]; rawText: string }[],
   jobs: RawJob[],
   maxJobs: number,
+  jobType: JobType,
 ): Promise<RankedJob[]> {
   if (jobs.length === 0) return [];
 
@@ -478,7 +603,7 @@ Sort by descending score in your output.`;
       ranked.push({
         ...base,
         score: Math.max(0, Math.min(100, Number(item?.score) || 0)),
-        matchReason: String(item?.matchReason || generateMatchReason(base.title, base.description)).slice(0, 80),
+        matchReason: String(item?.matchReason || generateMatchReason(base.title, base.description, jobType)).slice(0, 80),
       });
       if (ranked.length >= maxJobs) break;
     }
@@ -489,18 +614,23 @@ Sort by descending score in your output.`;
   }
 
   const allSkills = Array.from(new Set(resumes.flatMap(r => r.skills)));
+  const dynamicMatchKeywords = Array.from(new Set([
+    ...JOB_TYPE_CONFIG[jobType].matchKeywords.map(normalizeKeyword),
+    ...extractResumeKeywords(resumes),
+  ])).filter(Boolean);
+
   return jobs
     .map((j) => ({
       ...j,
-      score: computeMatchScore(j.title, j.company, j.description, j.location, allSkills),
-      matchReason: generateMatchReason(j.title, j.description),
+      score: computeMatchScore(j.title, j.company, j.description, j.location, allSkills, dynamicMatchKeywords),
+      matchReason: generateMatchReason(j.title, j.description, jobType),
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, maxJobs);
 }
 
-function formatEmailBody(jobs: Array<Omit<Job, "id" | "runId">>): string {
-  const lines = [`Here are today's top ${jobs.length} ML job postings matched to your profile:\n`];
+function formatEmailBody(jobs: Array<Omit<Job, "id" | "runId">>, jobTypeLabel: string): string {
+  const lines = [`Here are today's top ${jobs.length} ${jobTypeLabel} job postings matched to your profile:\n`];
   jobs.forEach((job, i) => {
     lines.push(`${i + 1}. ${job.title} | ${job.company} | ${job.location}`);
     if (job.description) lines.push(job.description);
@@ -541,6 +671,8 @@ export async function runPipeline(runId: number): Promise<void> {
   try {
     const settings = await storage.getSettings();
     const llmSettings = resolveLlmSettings(settings);
+    const jobType = settings.jobType || "ai_ml";
+    const jobTypeLabel = (JOB_TYPE_CONFIG[jobType] || JOB_TYPE_CONFIG.ai_ml).label;
     const includeKeywords = parseIncludeKeywords(settings.includeKeywords);
     const excludeKeywords = parseExcludeKeywords(settings.excludeKeywords);
     const resumes = await storage.getResumes();
@@ -563,6 +695,8 @@ export async function runPipeline(runId: number): Promise<void> {
       locationNames,
       settings.recencyDays,
       settings.maxJobs * 25,
+      jobType,
+      includeKeywords,
     );
 
     const includeFiltered = rawJobs.filter((j) => isIncludedJob(j, includeKeywords));
@@ -582,6 +716,7 @@ export async function runPipeline(runId: number): Promise<void> {
       resumes,
       rawJobs,
       settings.maxJobs,
+      jobType,
     );
 
     const topJobs = rankedJobs
@@ -613,9 +748,9 @@ export async function runPipeline(runId: number): Promise<void> {
       title: j.title, company: j.company, location: j.location,
       url: j.url, description: j.description,
       matchReason: j.matchReason, postedDate: today,
-    })));
+    })), jobTypeLabel);
 
-    const subject = `Daily ML Job Postings - ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
+    const subject = `Daily ${jobTypeLabel} Job Postings - ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
 
     let emailSent = false;
     if (settings.smtpEmail && settings.smtpPassword && recipients.length > 0) {
@@ -649,13 +784,15 @@ export async function resendEmail(runId: number): Promise<void> {
   if (!run || !run.emailBody) return;
 
   const settings = await storage.getSettings();
+  const jobType = settings.jobType || "ai_ml";
+  const jobTypeLabel = (JOB_TYPE_CONFIG[jobType] || JOB_TYPE_CONFIG.ai_ml).label;
   const recipients = await storage.getRecipients();
 
   if (!settings.smtpEmail || !settings.smtpPassword) {
     throw new Error("SMTP not configured");
   }
 
-  const subject = `Daily ML Job Postings (Resent) - ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
+  const subject = `Daily ${jobTypeLabel} Job Postings (Resent) - ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
   await sendEmailSMTP(subject, run.emailBody, settings, recipients.map(r => r.email));
   await storage.updateRun(runId, { emailSent: true });
 }

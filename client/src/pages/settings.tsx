@@ -19,6 +19,13 @@ const LLM_PROVIDERS = [
   { value: "gemini", label: "Google Gemini", models: ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"] },
 ];
 
+const JOB_TYPES = [
+  { value: "ai_ml", label: "AI/ML" },
+  { value: "sde_swe", label: "SDE / SWE" },
+  { value: "devops", label: "DevOps / SRE" },
+  { value: "hardware", label: "Hardware Engineering" },
+];
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const settingsQuery = useQuery<Settings>({ queryKey: ["/api/settings"] });
@@ -229,6 +236,23 @@ export default function SettingsPage() {
               onChange={(e) => setForm({ ...form, maxJobs: parseInt(e.target.value) || 20 })}
               data-testid="input-max-jobs"
             />
+          </div>
+          <div>
+            <Label className="text-xs">Job Type</Label>
+            <Select
+              value={form.jobType || "ai_ml"}
+              onValueChange={(v) => setForm({ ...form, jobType: v as Settings["jobType"] })}
+            >
+              <SelectTrigger data-testid="select-job-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {JOB_TYPES.map((jt) => (
+                  <SelectItem key={jt.value} value={jt.value}>{jt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">Controls search query and ranking logic for the selected role family.</p>
           </div>
           <div>
             <Label className="text-xs">Experience Filter</Label>
