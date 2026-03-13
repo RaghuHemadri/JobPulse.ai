@@ -1,0 +1,29 @@
+{
+  "resumes": [],
+  "recipients": [],
+  "locations": [],
+  "runs": [],
+  "jobs": [],
+  "settings": {
+    "scheduleHour": 3,
+    "scheduleMinute": 0,
+    "scheduleEnabled": false,
+    "maxJobs": 20,
+    "experienceFilter": "MS degree, <=3 years experience",
+    "includeKeywords": "",
+    "excludeKeywords": "",
+    "recencyDays": 1,
+    "llmProvider": "gemini",
+    "llmApiKey": "",
+    "llmModel": "gemini-2.0-flash",
+    "smtpEmail": "",
+    "smtpPassword": ""
+  },
+  "nextId": {
+    "resume": 1,
+    "recipient": 1,
+    "location": 1,
+    "run": 1,
+    "job": 1
+  }
+}

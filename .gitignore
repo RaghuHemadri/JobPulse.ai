@@ -1,0 +1,23 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.env
+.env.*
+!.env.example
+
+# Local app/user data (keep templates tracked)
+data/app-state.json
+data/trajectories/
+data/uploads/
+data/*.sqlite
+data/*.db
+data/*.log
+data/resume_*.txt
+data/resume_*.json
+
+# Personal documents
+resume_.pdf
+*.local.pdf
