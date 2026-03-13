@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import type { ListenOptions } from "net";
 
 const app = express();
 const httpServer = createServer(app);
@@ -31,6 +32,27 @@ export function log(message: string, source = "express") {
   });
 
   console.log(`${formattedTime} [${source}] ${message}`);
+}
+
+function startHttpServer(port: number) {
+  const baseOptions: ListenOptions = { port, host: "0.0.0.0" };
+  const preferredOptions: ListenOptions & { reusePort?: boolean } =
+    process.platform === "win32" ? baseOptions : { ...baseOptions, reusePort: true };
+
+  const onListening = () => {
+    log(`serving on port ${port}`);
+  };
+
+  httpServer.once("error", (err: NodeJS.ErrnoException) => {
+    const unsupportedReuse =
+      (err.code === "ENOTSUP" || err.code === "EINVAL") && "reusePort" in preferredOptions;
+    if (!unsupportedReuse) throw err;
+
+    log("reusePort unsupported on this platform/runtime; retrying without it", "express");
+    httpServer.listen(baseOptions, onListening);
+  });
+
+  httpServer.listen(preferredOptions, onListening);
 }
 
 app.use((req, res, next) => {
@@ -90,7 +112,5 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen({ port, host: "0.0.0.0" }, () => {
-    log(`serving on port ${port}`);
-  });
+  startHttpServer(port);
 })();

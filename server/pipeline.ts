@@ -208,14 +208,6 @@ function parseIncludeKeywords(value: string): string[] {
     .slice(0, 30);
 }
 
-function parseJobTypeKeywords(value: string): string[] {
-  return (value || "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean)
-    .slice(0, 20);
-}
-
 function isIncludedJob(job: RawJob, includeKeywords: string[]): boolean {
   if (includeKeywords.length === 0) return true;
   const haystack = `${job.title} ${job.company} ${job.description}`.toLowerCase();
@@ -285,17 +277,9 @@ function parseRelativePostedAgeDays(text: string): number | undefined {
   return undefined;
 }
 
-function buildLinkedInKeywords(
-  resumes: { skills: string[]; rawText: string }[],
-  jobTypeKeywords: string[],
-  includeKeywords: string[],
-): string {
-  const fallbackTypes = ["machine learning", "ai"];
-  const roleTerms = jobTypeKeywords.length > 0 ? jobTypeKeywords : fallbackTypes;
-  const resumeSkillTerms = Array.from(new Set(resumes.flatMap((r) => r.skills.map((s) => s.toLowerCase())))).slice(0, 6);
-  const includeTerms = includeKeywords.slice(0, 6);
-  const queryTerms = Array.from(new Set([...roleTerms, ...includeTerms, ...resumeSkillTerms]));
-  return queryTerms.join(" ");
+function buildLinkedInKeywords(resumes: { skills: string[]; rawText: string }[]): string {
+  void resumes;
+  return "machine learning ai";
 }
 
 async function fetchLinkedInSearchJobs(keywords: string, location: string, start: number): Promise<RawJob[]> {
@@ -320,15 +304,8 @@ function dedupeJobs(jobs: RawJob[]): RawJob[] {
   return out;
 }
 
-async function collectJobsFromLinkedIn(
-  resumes: { skills: string[]; rawText: string }[],
-  locations: string[],
-  recencyDays: number,
-  desiredCount: number,
-  jobTypeKeywords: string[],
-  includeKeywords: string[],
-): Promise<RawJob[]> {
-  const keywords = buildLinkedInKeywords(resumes, jobTypeKeywords, includeKeywords);
+async function collectJobsFromLinkedIn(resumes: { skills: string[]; rawText: string }[], locations: string[], recencyDays: number, desiredCount: number): Promise<RawJob[]> {
+  const keywords = buildLinkedInKeywords(resumes);
   const targets = Array.from(new Set([...(locations || []), "United States", "Remote"]));
   const jobs: RawJob[] = [];
   for (const target of targets) {
@@ -458,12 +435,6 @@ async function rankJobsWithLLM(
   resumes: { skills: string[]; rawText: string }[],
   jobs: RawJob[],
   maxJobs: number,
-  preferences: {
-    jobTypeKeywords: string[];
-    includeKeywords: string[];
-    excludeKeywords: string[];
-    experienceFilter: string;
-  },
 ): Promise<RankedJob[]> {
   if (jobs.length === 0) return [];
 
@@ -481,12 +452,6 @@ async function rankJobsWithLLM(
 
 CANDIDATE PROFILE:
 ${profileSummary}
-
-ROLE PREFERENCES:
-- Job types to prioritize: ${preferences.jobTypeKeywords.join(", ") || "ai, ml"}
-- Must include keywords when possible: ${preferences.includeKeywords.join(", ") || "(none)"}
-- Exclude keywords strictly: ${preferences.excludeKeywords.join(", ") || "(none)"}
-- Experience preference: ${preferences.experienceFilter || "(not specified)"}
 
 JOBS (JSON):
 ${JSON.stringify(jobPayload)}
@@ -576,7 +541,6 @@ export async function runPipeline(runId: number): Promise<void> {
   try {
     const settings = await storage.getSettings();
     const llmSettings = resolveLlmSettings(settings);
-    const jobTypeKeywords = parseJobTypeKeywords(settings.jobType);
     const includeKeywords = parseIncludeKeywords(settings.includeKeywords);
     const excludeKeywords = parseExcludeKeywords(settings.excludeKeywords);
     const resumes = await storage.getResumes();
@@ -599,8 +563,6 @@ export async function runPipeline(runId: number): Promise<void> {
       locationNames,
       settings.recencyDays,
       settings.maxJobs * 25,
-      jobTypeKeywords,
-      includeKeywords,
     );
 
     const includeFiltered = rawJobs.filter((j) => isIncludedJob(j, includeKeywords));
@@ -620,12 +582,6 @@ export async function runPipeline(runId: number): Promise<void> {
       resumes,
       rawJobs,
       settings.maxJobs,
-      {
-        jobTypeKeywords,
-        includeKeywords,
-        excludeKeywords,
-        experienceFilter: settings.experienceFilter,
-      },
     );
 
     const topJobs = rankedJobs

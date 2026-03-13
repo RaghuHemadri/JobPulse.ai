@@ -240,16 +240,6 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <Label className="text-xs">Job Types</Label>
-            <Input
-              value={form.jobType || ""}
-              onChange={(e) => setForm({ ...form, jobType: e.target.value })}
-              placeholder="ai, ml, sde, swe, devops"
-              data-testid="input-job-type"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Comma-separated role types to prioritize in search and ranking prompt.</p>
-          </div>
-          <div>
             <Label className="text-xs">Include Keywords</Label>
             <Input
               value={form.includeKeywords || ""}
