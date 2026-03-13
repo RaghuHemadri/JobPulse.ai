@@ -2,6 +2,8 @@
 
 Thanks for helping improve JobPulse.
 
+We actively welcome open-source contributors. If you are new, start with a small PR and ask questions in the issue thread.
+
 ## Development Setup
 
 ```bash
@@ -40,3 +42,19 @@ Conventional commits are recommended:
 - Desktop packaging polish
 - Accessibility and performance
 - Tests and observability
+
+## Feature Wishlist
+
+- Additional role packs (Data Engineer, Product Engineer, Security Engineer)
+- Better role-aware keyword presets in settings
+- Better duplicate detection across job sources
+- Smarter salary/location normalization
+- Analytics around match quality over time
+
+## Release Notes and Changelog Contributions
+
+When you open a PR, include a short release-note style summary in the PR description:
+
+- What changed
+- Why it matters
+- Any migration or behavior impact

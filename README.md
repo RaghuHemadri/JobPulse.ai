@@ -132,6 +132,27 @@ Workflow file: .github/workflows/release-desktop.yml
 - Sensitive local files are gitignored
 - Contributor docs and issue templates included
 
+## Contributors Wanted
+
+JobPulse is actively looking for open-source contributors.
+
+If you want to help, pick an issue or propose a feature:
+
+- Issues: https://github.com/RaghuHemadri/JobPulse.ai/issues
+- New issue template: https://github.com/RaghuHemadri/JobPulse.ai/issues/new/choose
+- Pull requests: https://github.com/RaghuHemadri/JobPulse.ai/pulls
+
+High-impact feature areas:
+
+- More job sources with anti-duplication and quality controls
+- Better ranking explanations and confidence calibration
+- Saved searches and multi-profile support
+- More resume parsing improvements (DOCX and richer skill extraction)
+- Alerting channels beyond email (Slack, Discord, webhook)
+- End-to-end tests for pipeline, parsing, and desktop packaging
+
+First-time contributors are welcome. Small improvements, docs fixes, and focused bugfix PRs are great ways to start.
+
 ## Contributing
 
 See CONTRIBUTING.md for setup, coding standards, and PR guidelines.
