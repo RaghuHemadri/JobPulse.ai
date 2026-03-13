@@ -90,36 +90,7 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
-
-  function listenWithOptions(options: { port: number; host: string }): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const onError = (err: NodeJS.ErrnoException) => {
-        httpServer.off("listening", onListening);
-        reject(err);
-      };
-      const onListening = () => {
-        httpServer.off("error", onError);
-        resolve();
-      };
-
-      httpServer.once("error", onError);
-      httpServer.once("listening", onListening);
-      httpServer.listen(options);
-    });
-  }
-
-  try {
-    // Preferred for desktop packaging: only expose locally.
-    await listenWithOptions({ port, host: "127.0.0.1" });
-  } catch (err: any) {
-    const code = err?.code || "";
-    if (code === "ENOTSUP" || code === "EADDRNOTAVAIL") {
-      // Fallback in environments where loopback binding is restricted.
-      await listenWithOptions({ port, host: "0.0.0.0" });
-    } else {
-      throw err;
-    }
-  }
-
-  log(`serving on port ${port}`);
+  httpServer.listen({ port, host: "0.0.0.0" }, () => {
+    log(`serving on port ${port}`);
+  });
 })();
