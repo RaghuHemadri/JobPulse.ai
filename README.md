@@ -4,7 +4,7 @@
 [![Download Windows EXE](https://img.shields.io/badge/Download-Windows%20EXE-0078D6?logo=windows&logoColor=white)](https://github.com/RaghuHemadri/JobPulse.ai/releases/latest/download/JobPulse-win.exe)
 [![Download macOS DMG](https://img.shields.io/badge/Download-macOS%20DMG-111111?logo=apple&logoColor=white)](https://github.com/RaghuHemadri/JobPulse.ai/releases/latest/download/JobPulse-mac.dmg)
 
-JobPulse is an open-source AI job copilot for ML/AI roles.
+JobPulse is an open-source AI job copilot for tech roles.
 
 It pulls real LinkedIn jobs, ranks relevance against your resume, applies include/exclude/location/recency filters, and emails a daily top list.
 
