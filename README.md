@@ -17,6 +17,20 @@ It pulls real LinkedIn jobs, ranks relevance against your resume, applies includ
 - Persistent local state
 - PDF resume parsing from the app UI
 
+## Screenshots
+
+### Dashboard Overview
+
+![JobPulse Dashboard](docs/screenshots/dashboard-overview.svg)
+
+### Settings and Filters
+
+![JobPulse Settings and Filters](docs/screenshots/settings-and-filters.svg)
+
+### Resume PDF Parsing
+
+![JobPulse Resume PDF Parsing](docs/screenshots/resume-pdf-parse.svg)
+
 ## Quick Start (Source)
 
 ### 1) Prerequisites
