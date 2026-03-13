@@ -140,6 +140,10 @@ See CONTRIBUTING.md for setup, coding standards, and PR guidelines.
 
 See SECURITY.md for reporting vulnerabilities.
 
+## Credits
+
+- Perplexity Computer for creating the initial UI prototype.
+
 ## License
 
 MIT License. See LICENSE.
